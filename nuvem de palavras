@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tecnologia do Oprimido - Nuvem de Palavras 3D</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/panolens@0.11.0/build/panolens.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #2c3e50 0%, #1a1a2e 100%);
+            color: #ecf0f1;
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px 0;
+            z-index: 10;
+            background: rgba(26, 26, 46, 0.8);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #f39c12;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #bdc3c7;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .content {
+            display: flex;
+            flex: 1;
+            gap: 20px;
+            position: relative;
+        }
+        
+        .viewer-container {
+            flex: 7;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+            position: relative;
+            background: #1e272e;
+        }
+        
+        #panorama {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .controls {
+            flex: 3;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background: rgba(26, 26, 46, 0.8);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 400px;
+        }
+        
+        .slide-controls {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .slide-indicator {
+            text-align: center;
+            font-size: 1.2rem;
+            margin: 10px 0;
+            color: #f39c12;
+            font-weight: bold;
+        }
+        
+        .word-cloud {
+            background: rgba(30, 39, 46, 0.9);
+            padding: 20px;
+            border-radius: 12px;
+            flex: 1;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            overflow-y: auto;
+            max-height: 300px;
+        }
+        
+        .word {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .word:hover {
+            transform: scale(1.1);
+        }
+        
+        .word-1 { background: #e74c3c; color: white; }
+        .word-2 { background: #f39c12; color: white; }
+        .word-3 { background: #2ecc71; color: white; }
+        .word-4 { background: #3498db; color: white; }
+        .word-5 { background: #9b59b6; color: white; }
+        .word-6 { background: #1abc9c; color: white; }
+        .word-7 { background: #d35400; color: white; }
+        
+        .info-panel {
+            background: rgba(30, 39, 46, 0.9);
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+        
+        .info-panel h3 {
+            color: #f39c12;
+            margin-bottom: 10px;
+        }
+        
+        .info-panel p {
+            line-height: 1.6;
+            color: #bdc3c7;
+        }
+        
+        .navigation-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: #ecf0f1;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .navigation-hint svg {
+            width: 20px;
+            height: 20px;
+            fill: #f39c12;
+        }
+        
+        @media (max-width: 900px) {
+            .content {
+                flex-direction: column;
+            }
+            
+            .controls {
+                max-width: 100%;
+            }
+            
+            .viewer-container {
+                min-height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Tecnologia do Oprimido</h1>
+            <p class="subtitle">Uma experiência visual imersiva em 3D que explora os conceitos de tecnologia, resistência e comunidade através de uma nuvem de palavras contextualizada no formato de uma favela.</p>
+        </header>
+        
+        <div class="content">
+            <div class="viewer-container">
+                <div id="panorama"></div>
+                <div class="navigation-hint">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z"/>
+                    </svg>
+                    Arraste para explorar o ambiente 3D
+                </div>
+            </div>
+            
+            <div class="controls">
+                <div class="slide-controls">
+                    <button id="prev-btn">Anterior</button>
+                    <button id="next-btn">Próximo</button>
+                </div>
+                
+                <div class="slide-indicator">Slide 1 de 5</div>
+                
+                <div class="word-cloud">
+                    <div class="word word-1">Tecnologia</div>
+                    <div class="word word-2">Oprimido</div>
+                    <div class="word word-3">Resistência</div>
+                    <div class="word word-4">Comunidade</div>
+                    <div class="word word-5">Inovação</div>
+                    <div class="word word-6">Periferia</div>
+                    <div class="word word-7">Solidariedade</div>
+                    <div class="word word-1">Autonomia</div>
+                    <div class="word word-2">Libertação</div>
+                    <div class="word word-3">Criatividade</div>
+                    <div class="word word-4">Transformação</div>
+                    <div class="word word-5">Educação</div>
+                    <div class="word word-6">Justiça</div>
+                    <div class="word word-7">Cidadania</div>
+                </div>
+                
+                <div class="info-panel">
+                    <h3>Sobre a Experiência</h3>
+                    <p>Esta apresentação 3D explora visualmente os conceitos de "Tecnologia do Oprimido" através de uma representação que remete à arquitetura orgânica de uma favela. Cada elemento visual e palavra foi cuidadosamente posicionado para criar uma narrativa sobre resistência e inovação tecnológica em contextos periféricos.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dados dos slides - cenas 3D com palavras temáticas
+        const slides = [
+            {
+                title: "Introdução à Tecnologia do Oprimido",
+                words: ["Tecnologia", "Oprimido", "Resistência", "Comunidade"],
+                background: "https://placeholder-image-service.onrender.com/image/800x600?prompt=Favela%20panorama%20with%20stacked%20houses%20and%20narrow%20alleys%20at%20sunset&id=slide1",
+                description: "Um panorama de favela com casas empilhadas e vielas estreitas ao entardecer."
+            },
+            {
+                title: "Inovação na Periferia",
+                words: ["Inovação", "Periferia", "Criatividade", "Autonomia"],
+                background: "https://placeholder-image-service.onrender.com/image/800x600?prompt=Close-up%20of%20improvised%20technology%20in%20a%20favela%20home&id=slide2",
+                description: "Close-up de tecnologia improvisada em uma casa de favela."
+            },
+            {
+                title: "Comunidade e Solidariedade",
+                words: ["Solidariedade", "Comunidade", "Coletividade", "União"],
+                background: "https://placeholder-image-service.onrender.com/image/800x600?prompt=Community%20space%20in%20a%20favela%20with%20people%20gathering&id=slide3",
+                description: "Espaço comunitário em uma favela com pessoas se reunindo."
+            },
+            {
+                title: "Resistência e Transformação",
+                words: ["Resistência", "Transformação", "Mudança", "Libertação"],
+                background: "https://placeholder-image-service.onrender.com/image/800x600?prompt=Graffiti%20wall%20in%20a%20favela%20with%20social%20messages&id=slide4",
+                description: "Muro de graffiti em uma favela com mensagens sociais."
+            },
+            {
+                title: "Educação e Cidadania",
+                words: ["Educação", "Cidadania", "Conscientização", "Justiça"],
+                background: "https://placeholder-image-service.onrender.com/image/800x600?prompt=Community%20library%20or%20learning%20space%20in%20a%20favela&id=slide5",
+                description: "Biblioteca comunitária ou espaço de aprendizado em uma favela."
+            }
+        ];
+
+        // Inicialização do visualizador Panorama
+        let viewer = new PANOLENS.Viewer({
+            container: document.getElementById('panorama'),
+            autoHideInfospot: false,
+            controlBar: false,
+            cameraFov: 80
+        });
+
+        // Infospots (palavras flutuantes no ambiente 3D)
+        const infospots = [];
+        
+        // Adicionar infospots com palavras para cada slide
+        slides.forEach((slide, index) => {
+            slide.words.forEach((word, wordIndex) => {
+                // Posicionamento 3D das palavras no ambiente
+                const position = new THREE.Vector3(
+                    Math.cos(wordIndex * Math.PI * 0.4) * 10,
+                    Math.sin(wordIndex * Math.PI * 0.4) * 5 + 5,
+                    Math.sin(wordIndex * Math.PI * 0.4) * 10
+                );
+                
+                const infospot = new PANOLENS.Infospot(500, PANOLENS.DataImage.Info);
+                infospot.position.copy(position);
+                infospot.addHoverText(word, 100);
+                infospots.push(infospot);
+            });
+        });
+
+        // Adicionar a primeira cena
+        let currentSlide = 0;
+        const panorama = new PANOLENS.ImagePanorama(slides[currentSlide].background);
+        infospots.forEach(infospot => panorama.add(infospot));
+        viewer.add(panorama);
+
+        // Navegação entre slides
+        document.getElementById('next-btn').addEventListener('click', () => {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        });
+
+        document.getElementById('prev-btn').addEventListener('click', () => {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        });
+
+        // Atualizar slide atual
+        function updateSlide() {
+            document.querySelector('.slide-indicator').textContent = `Slide ${currentSlide + 1} de ${slides.length}`;
+            
+            // Atualizar a cena
+            const newPanorama = new PANOLENS.ImagePanorama(slides[currentSlide].background);
+            
+            // Adicionar infospots para o slide atual
+            infospots.forEach(infospot => newPanorama.add(infospot));
+            
+            viewer.setPanorama(newPanorama);
+            
+            // Atualizar a nuvem de palavras
+            const wordCloud = document.querySelector('.word-cloud');
+            wordCloud.innerHTML = '';
+            
+            slides[currentSlide].words.forEach((word, i) => {
+                const wordElement = document.createElement('div');
+                wordElement.classList.add('word', `word-${(i % 7) + 1}`);
+                wordElement.textContent = word;
+                wordCloud.appendChild(wordElement);
+            });
+        }
+
+        // Inicializar a primeira slide
+        updateSlide();
+
+        // Efeitos de interação com as palavras
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('word')) {
+                const word = e.target.textContent;
+                alert(`Você selecionou a palavra: ${word}\n\nEsta palavra representa um conceito-chave na discussão sobre tecnologia e resistência nas periferias.`);
+            }
+        });
+    </script>
+</body>
+</html>
